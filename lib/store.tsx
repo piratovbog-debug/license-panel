@@ -196,7 +196,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           product: k.product,
           duration: k.duration,
           createdBy: k.owner,
-          count: 1,
         }),
       }).catch((e) => console.error("Failed to sync key to D1:", e));
     }
