@@ -246,6 +246,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const deleteKey = (id: string) => {
     const current = stateRef.current;
     const key = current.keys.find((k) => k.id === id);
+    const API_URL = "https://license-api.burdikey-panel.workers.dev";
+    fetch(`${API_URL}/api/keys?id=${id}`, { method: "DELETE" })
+      .catch((e) => console.error("Failed to delete key from D1:", e));
     const logEntry: LogEntry = {
       id: generateId(),
       date: formatDate(new Date()),
@@ -264,6 +267,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const resetHwid = (id: string) => {
     const current = stateRef.current;
     const key = current.keys.find((k) => k.id === id);
+    const API_URL = "https://license-api.burdikey-panel.workers.dev";
+    fetch(`${API_URL}/api/keys`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, hwid: null, status: "created" }),
+    }).catch((e) => console.error("Failed to reset HWID in D1:", e));
     const logEntry: LogEntry = {
       id: generateId(),
       date: formatDate(new Date()),
@@ -282,6 +291,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const bindHwid = (id: string, hwid: string) => {
     const current = stateRef.current;
     const key = current.keys.find((k) => k.id === id);
+    const API_URL = "https://license-api.burdikey-panel.workers.dev";
+    fetch(`${API_URL}/api/keys`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, hwid, status: "active", activated_at: Math.floor(Date.now() / 1000) }),
+    }).catch((e) => console.error("Failed to bind HWID in D1:", e));
     const logEntry: LogEntry = {
       id: generateId(),
       date: formatDate(new Date()),
@@ -302,6 +317,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const revokeKey = (id: string) => {
     const current = stateRef.current;
     const key = current.keys.find((k) => k.id === id);
+    const API_URL = "https://license-api.burdikey-panel.workers.dev";
+    fetch(`${API_URL}/api/keys`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status: "banned" }),
+    }).catch((e) => console.error("Failed to ban key in D1:", e));
     const logEntry: LogEntry = {
       id: generateId(),
       date: formatDate(new Date()),
