@@ -204,11 +204,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addKey = (product: string, duration: string, count: number, maxActivations: number = -1) => {
+  const addKey = (product: string, duration: string, count: number, maxActivations: number = -1, customKey?: string) => {
     const current = stateRef.current;
-    const newKeys: LicenseKey[] = Array.from({ length: count }, () => ({
+    const newKeys: LicenseKey[] = Array.from({ length: count }, (_, i) => ({
       id: generateId(),
-      key: generateKey(),
+      key: (count === 1 && customKey) ? customKey.toUpperCase() : generateKey(),
       product,
       status: "created" as const,
       duration,

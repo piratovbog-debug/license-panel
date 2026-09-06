@@ -228,6 +228,7 @@ function KeysPage({ store }: { store: StoreType }) {
   const [genDur, setGenDur] = useState("1 день");
   const [genCnt, setGenCnt] = useState(1);
   const [genMaxAct, setGenMaxAct] = useState(-1);
+  const [genCustomKey, setGenCustomKey] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [bindM, setBindM] = useState<{ id: string; key: string } | null>(null);
   const [hwidIn, setHwidIn] = useState("");
@@ -264,11 +265,15 @@ function KeysPage({ store }: { store: StoreType }) {
               <select value={genDur} onChange={(e) => setGenDur(e.target.value)} className="w-full px-3 py-2 bg-[#0d0f1a] border border-zinc-700/50 rounded-xl text-white text-sm focus:outline-none focus:border-[color:var(--accent)]/50 transition">
                 <option>1 день</option><option>7 дней</option><option>30 дней</option><option>90 дней</option><option>Навсегда</option></select></div>
             <div><label className="block text-sm text-zinc-400 mb-1">{t.count}</label>
-              <input type="number" min={1} max={100} value={genCnt} onChange={(e) => setGenCnt(Number(e.target.value))} className="w-full px-3 py-2 bg-[#0d0f1a] border border-zinc-700/50 rounded-xl text-white text-sm focus:outline-none focus:border-[color:var(--accent)]/50 transition" /></div>
+              <input type="number" min={1} max={100} value={genCnt} onChange={(e) => { setGenCnt(Number(e.target.value)); if (Number(e.target.value) > 1) setGenCustomKey(""); }} className="w-full px-3 py-2 bg-[#0d0f1a] border border-zinc-700/50 rounded-xl text-white text-sm focus:outline-none focus:border-[color:var(--accent)]/50 transition" /></div>
             <div><label className="block text-sm text-zinc-400 mb-1">Лимит активаций (-1 = ∞)</label>
-              <input type="number" min={-1} max={1000} value={genMaxAct} onChange={(e) => setGenMaxAct(Number(e.target.value))} className="w-full px-3 py-2 bg-[#0d0f1a] border border-zinc-700/50 rounded-xl text-white text-sm focus:outline-none focus:border-[color:var(--accent)]/50 transition" /></div>
+              <input type="number" min={-1} max={10000} value={genMaxAct} onChange={(e) => setGenMaxAct(Number(e.target.value))} className="w-full px-3 py-2 bg-[#0d0f1a] border border-zinc-700/50 rounded-xl text-white text-sm focus:outline-none focus:border-[color:var(--accent)]/50 transition" /></div>
+            {genCnt === 1 && (
+              <div className="sm:col-span-2"><label className="block text-sm text-zinc-400 mb-1">Свой ключ (пусто = сгенерировать)</label>
+                <input type="text" value={genCustomKey} onChange={(e) => setGenCustomKey(e.target.value.toUpperCase())} placeholder="BURDI-KEY-80K2-1R9P-HJV9-356U" className="w-full px-3 py-2 bg-[#0d0f1a] border border-zinc-700/50 rounded-xl text-white text-sm font-mono focus:outline-none focus:border-[color:var(--accent)]/50 transition" /></div>
+            )}
             <div className="flex items-end gap-2">
-              <button onClick={() => { if (!genProd.trim()) return; addKey(genProd.trim(), genDur, genCnt, genMaxAct); setShowGen(false); setGenProd(""); setGenCnt(1); setGenMaxAct(-1); }} className="px-4 py-2 accent-bg accent-bg-hover text-white rounded-xl text-sm font-medium transition">{t.generate}</button>
+              <button onClick={() => { if (!genProd.trim()) return; addKey(genProd.trim(), genDur, genCnt, genMaxAct, genCustomKey || undefined); setShowGen(false); setGenProd(""); setGenCnt(1); setGenMaxAct(-1); setGenCustomKey(""); }} className="px-4 py-2 accent-bg accent-bg-hover text-white rounded-xl text-sm font-medium transition">{t.generate}</button>
               <button onClick={() => setShowGen(false)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-sm transition">{t.cancel}</button></div>
           </div>
         </div>
