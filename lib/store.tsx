@@ -94,11 +94,12 @@ interface StoreContextValue {
   state: AppState;
   login: (username: string, password: string) => boolean;
   logout: () => void;
-  addKey: (product: string, duration: string, count: number) => void;
+  addKey: (product: string, duration: string, count: number, maxActivations?: number) => void;
   deleteKey: (id: string) => void;
   resetHwid: (id: string) => void;
   bindHwid: (id: string, hwid: string) => void;
   revokeKey: (id: string) => void;
+  refreshKeys: () => void;
   addUser: (username: string, password: string, role: string, balance: number) => void;
   deleteUser: (id: string) => void;
   addProduct: (name: string, version: string, price: number) => void;
@@ -290,7 +291,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
     setState((prev) => ({
       ...prev,
-      keys: prev.keys.map((k) => (k.id === id ? { ...k, hwid: null } : k)),
+      keys: prev.keys.map((k) => (k.id === id ? { ...k, hwid: null, status: "created" as const } : k)),
       logs: [logEntry, ...prev.logs],
     }));
   };
@@ -472,6 +473,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, theme }));
   };
 
+  const refreshKeys = () => {
+    const API_URL = "https://license-api.burdikey-panel.workers.dev";
+    fetch(`${API_URL}/api/keys`)
+      .then((r) => r.json())
+      .then((data: any[]) => {
+        if (!Array.isArray(data)) return;
+        const d1Keys: LicenseKey[] = data.map((row: any) => ({
+          id: row.id,
+          key: row.key,
+          product: row.product,
+          status: row.status,
+          duration: row.duration_days === -1 ? "Навсегда" : `${row.duration_days} дней`,
+          owner: row.created_by,
+          hwid: row.hwid || null,
+          maxActivations: row.max_activations ?? -1,
+          activationsUsed: row.activations_used ?? 0,
+          createdAt: new Date(row.created_at * 1000).toISOString().replace("T", " ").slice(0, 19),
+          expiresAt: row.expires_at ? new Date(row.expires_at * 1000).toISOString().replace("T", " ").slice(0, 19) : null,
+        }));
+        setState((prev) => ({ ...prev, keys: d1Keys }));
+      })
+      .catch(() => {});
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -483,6 +508,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         resetHwid,
         bindHwid,
         revokeKey,
+        refreshKeys,
         addUser,
         deleteUser,
         addProduct,

@@ -7,7 +7,7 @@ import Modal from "@/app/components/Modal";
 import {
   LayoutDashboard, Key, Users, Package, FileText, Settings, LogOut,
   Globe, Sun, Moon, Search, MoreVertical, Copy, RotateCcw, Ban, Trash2,
-  Fingerprint, UserPlus, Plus,
+  Fingerprint, UserPlus, Plus, RefreshCw,
 } from "lucide-react";
 
 const navItems = [
@@ -219,7 +219,7 @@ function DashboardPage({ store }: { store: StoreType }) {
 }
 
 function KeysPage({ store }: { store: StoreType }) {
-  const { state, deleteKey, resetHwid, bindHwid, revokeKey, addKey } = store;
+  const { state, deleteKey, resetHwid, bindHwid, revokeKey, addKey, refreshKeys } = store;
   const t = dictionary.ru;
   const [search, setSearch] = useState("");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -232,6 +232,13 @@ function KeysPage({ store }: { store: StoreType }) {
   const [bindM, setBindM] = useState<{ id: string; key: string } | null>(null);
   const [hwidIn, setHwidIn] = useState("");
   const [resetC, setResetC] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    refreshKeys();
+    setTimeout(() => setRefreshing(false), 1000);
+  };
 
   const filtered = state.keys.filter((k) =>
     k.key.toLowerCase().includes(search.toLowerCase()) || k.product.toLowerCase().includes(search.toLowerCase()) || k.owner.toLowerCase().includes(search.toLowerCase())
@@ -241,7 +248,10 @@ function KeysPage({ store }: { store: StoreType }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">{t.licenseKeys}</h1>
-        <button onClick={() => setShowGen(true)} className="flex items-center gap-2 accent-bg accent-bg-hover text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-lg accent-shadow"><Key className="w-4 h-4" />{t.generate}</button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleRefresh} className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-sm font-medium transition"><RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />Обновить</button>
+          <button onClick={() => setShowGen(true)} className="flex items-center gap-2 accent-bg accent-bg-hover text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-lg accent-shadow"><Key className="w-4 h-4" />{t.generate}</button>
+        </div>
       </div>
       {showGen && (
         <div className="bg-[#111327] border border-zinc-800/50 rounded-xl p-5">
