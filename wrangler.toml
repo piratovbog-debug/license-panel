@@ -1,0 +1,9 @@
+name = "license-panel"
+compatibility_date = "2024-09-25"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "license-panel-db"
+database_id = "9f3e2b77-c179-4ab9-bebb-899bbac68620"
