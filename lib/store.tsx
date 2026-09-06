@@ -184,6 +184,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       createdAt: formatDate(new Date()),
       expiresAt: null,
     }));
+
+    // Отправляем ключи в D1 через Worker API
+    const API_URL = "https://license-api.burdikey-panel.workers.dev";
+    for (const k of newKeys) {
+      fetch(`${API_URL}/api/keys`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: k.key,
+          product: k.product,
+          duration: k.duration,
+          createdBy: k.owner,
+          count: 1,
+        }),
+      }).catch((e) => console.error("Failed to sync key to D1:", e));
+    }
+
     const logEntry: LogEntry = {
       id: generateId(),
       date: formatDate(new Date()),
