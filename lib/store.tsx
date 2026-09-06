@@ -10,6 +10,8 @@ export interface LicenseKey {
   duration: string;
   owner: string;
   hwid: string | null;
+  maxActivations: number;
+  activationsUsed: number;
   createdAt: string;
   expiresAt: string | null;
 }
@@ -146,6 +148,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           duration: row.duration_days === -1 ? "Навсегда" : `${row.duration_days} дней`,
           owner: row.created_by,
           hwid: row.hwid || null,
+          maxActivations: row.max_activations ?? -1,
+          activationsUsed: row.activations_used ?? 0,
           createdAt: new Date(row.created_at * 1000).toISOString().replace("T", " ").slice(0, 19),
           expiresAt: row.expires_at ? new Date(row.expires_at * 1000).toISOString().replace("T", " ").slice(0, 19) : null,
         }));
@@ -199,7 +203,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addKey = (product: string, duration: string, count: number) => {
+  const addKey = (product: string, duration: string, count: number, maxActivations: number = -1) => {
     const current = stateRef.current;
     const newKeys: LicenseKey[] = Array.from({ length: count }, () => ({
       id: generateId(),
@@ -209,6 +213,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       duration,
       owner: current.currentUser?.username || "unknown",
       hwid: null,
+      maxActivations,
+      activationsUsed: 0,
       createdAt: formatDate(new Date()),
       expiresAt: null,
     }));
@@ -224,6 +230,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           product: k.product,
           duration: k.duration,
           createdBy: k.owner,
+          max_activations: k.maxActivations,
         }),
       }).catch((e) => console.error("Failed to sync key to D1:", e));
     }
