@@ -206,35 +206,50 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const addKey = (product: string, duration: string, count: number, maxActivations: number = -1, customKey?: string) => {
     const current = stateRef.current;
-    const newKeys: LicenseKey[] = Array.from({ length: count }, (_, i) => ({
-      id: generateId(),
-      key: (count === 1 && customKey) ? customKey.toUpperCase() : generateKey(),
-      product,
-      status: "created" as const,
-      duration,
-      owner: current.currentUser?.username || "unknown",
-      hwid: null,
-      maxActivations,
-      activationsUsed: 0,
-      createdAt: formatDate(new Date()),
-      expiresAt: null,
-    }));
-
-    // Отправляем ключи в D1 через Worker API
     const API_URL = "https://license-api.burdikey-panel.workers.dev";
-    for (const k of newKeys) {
+
+    // Сначала отправляем ВСЕ ключи в D1, потом обновляем список
+    const keysToSend: {key: string, product: string, duration: string, createdBy: string, max_activations: number}[] = [];
+    for (let i = 0; i < count; i++) {
+      keysToSend.push({
+        key: (count === 1 && customKey) ? customKey.toUpperCase() : generateKey(),
+        product,
+        duration,
+        createdBy: current.currentUser?.username || "unknown",
+        max_activations: maxActivations,
+      });
+    }
+
+    Promise.all(keysToSend.map(k =>
       fetch(`${API_URL}/api/keys`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          key: k.key,
-          product: k.product,
-          duration: k.duration,
-          createdBy: k.owner,
-          max_activations: k.maxActivations,
-        }),
-      }).catch((e) => console.error("Failed to sync key to D1:", e));
-    }
+        body: JSON.stringify(k),
+      }).then(r => r.json())
+    ))
+    .then(() => {
+      // После успешного создания — загружаем из D1
+      return fetch(`${API_URL}/api/keys`);
+    })
+    .then(r => r.json())
+    .then((data: any[]) => {
+      if (!Array.isArray(data)) return;
+      const d1Keys: LicenseKey[] = data.map((row: any) => ({
+        id: row.id,
+        key: row.key,
+        product: row.product,
+        status: row.status,
+        duration: row.duration_days === -1 ? "Навсегда" : `${row.duration_days} дней`,
+        owner: row.created_by,
+        hwid: row.hwid || null,
+        maxActivations: row.max_activations ?? -1,
+        activationsUsed: row.activations_used ?? 0,
+        createdAt: new Date(row.created_at * 1000).toISOString().replace("T", " ").slice(0, 19),
+        expiresAt: row.expires_at ? new Date(row.expires_at * 1000).toISOString().replace("T", " ").slice(0, 19) : null,
+      }));
+      setState((prev) => ({ ...prev, keys: d1Keys }));
+    })
+    .catch((e) => console.error("Failed to create keys in D1:", e));
 
     const logEntry: LogEntry = {
       id: generateId(),
@@ -246,7 +261,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
     setState((prev) => ({
       ...prev,
-      keys: [...newKeys, ...prev.keys],
       logs: [logEntry, ...prev.logs],
     }));
   };
