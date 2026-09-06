@@ -131,6 +131,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("appState", JSON.stringify(toSave));
   }, [state]);
 
+  // Загружаем ключи из D1 при старте
+  useEffect(() => {
+    const API_URL = "https://license-api.burdikey-panel.workers.dev";
+    fetch(`${API_URL}/api/keys`)
+      .then((r) => r.json())
+      .then((data: any[]) => {
+        if (!Array.isArray(data)) return;
+        const d1Keys: LicenseKey[] = data.map((row: any) => ({
+          id: row.id,
+          key: row.key,
+          product: row.product,
+          status: row.status,
+          duration: row.duration_days === -1 ? "Навсегда" : `${row.duration_days} дней`,
+          owner: row.created_by,
+          hwid: row.hwid || null,
+          createdAt: new Date(row.created_at * 1000).toISOString().replace("T", " ").slice(0, 19),
+          expiresAt: row.expires_at ? new Date(row.expires_at * 1000).toISOString().replace("T", " ").slice(0, 19) : null,
+        }));
+        setState((prev) => {
+          const existingIds = new Set(prev.keys.map((k) => k.id));
+          const newD1Keys = d1Keys.filter((k) => !existingIds.has(k.id));
+          if (newD1Keys.length === 0) return prev;
+          return { ...prev, keys: [...d1Keys, ...prev.keys.filter((k) => !d1Keys.find((d) => d.id === k.id))] };
+        });
+      })
+      .catch(() => {});
+  }, []);
+
   const login = (username: string, password: string): boolean => {
     const current = stateRef.current;
     const user = current.users.find(
